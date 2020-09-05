@@ -5,9 +5,6 @@ with Ada.Text_IO.Bounded_IO;
 with Ada.Containers.Indefinite_Vectors;
 
 procedure advampiric is
-   type Name_Access is not null access constant String;
-   type Name_List is array (Positive range <>) of Name_Access;
-
    package IO renames Ada.Text_IO;
 
    package BS
@@ -16,55 +13,48 @@ procedure advampiric is
    package BIO
       is new Ada.Text_IO.Bounded_IO (Bounded => BS);
 
-   type Log_Type (Important_Count : Natural) is
+   package Name_Vectors is new Ada.Containers.Indefinite_Vectors
+      (Index_Type => Natural,
+       Element_Type => String);
+
+   type Log_Type is
       record
          Id          : Natural;
          Name        : BS.Bounded_String;
          Path        : BS.Bounded_String;
-         Important   : Name_List (1 .. Important_Count);
+         Important   : Name_Vectors.Vector;
       end record;
 
-   package Log_Vectors is new Ada.Containers.Indefinite_Vectors
-      (Index_Type => Natural,
-       Element_Type => Log_Type);
+   type Log_List is array (1 .. 2) of Log_Type;
 
-   Dfly : Log_Type := (
-      Id => 1,
-      Name => BS.To_Bounded_String ("log2"),
-      Path => BS.To_Bounded_String ("log2.log"),
-      Important => (
-         new String'("Name1"),
-         new String'("Name2")
-      ),
-      Important_Count => 2
-   );
+   function Get_Logs return Log_List;
 
-   Myr : Log_Type := (
-      Id => 2,
-      Name => BS.To_Bounded_String ("log1"),
-      Path => BS.To_Bounded_String ("log1.log"),
-      Important => (
-         1 => new String'("Name3")
-      ),
-      Important_Count => 1
-   );
+   function Get_Logs return Log_List is
+      Logs : constant Log_List := ((
+         Id => 1,
+         Name => BS.To_Bounded_String ("log2"),
+         Path => BS.To_Bounded_String ("log2.log"),
+         Important => Name_Vectors."&"("Name1", "Name2")
+      ), (
+         Id => 2,
+         Name => BS.To_Bounded_String ("log1"),
+         Path => BS.To_Bounded_String ("log1.log"),
+         Important => Name_Vectors.To_Vector ("Name3", 1)
+      ));
+   begin
+      return Logs;
+   end Get_Logs;
 
-   Logs : Log_Vectors.Vector := Log_Vectors."&"(Dfly, Myr);
+   Logs : constant Log_List := Get_Logs;
 
 begin
    Ada.Wide_Wide_Text_IO.Put_Line ("test");
 
-   BIO.Put_Line (Myr.Name);
-
    for L of Logs loop
       BIO.Put_Line (L.Path);
-   end loop;
 
-   for I in Dfly.Important'Range loop
-      IO.Put_Line (Dfly.Important (I).all);
-   end loop;
-
-   for I in Myr.Important'Range loop
-      IO.Put_Line (Myr.Important (I).all);
+      for N of L.Important loop
+         IO.Put_Line (N);
+      end loop;
    end loop;
 end advampiric;
