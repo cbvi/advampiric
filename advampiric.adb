@@ -3,6 +3,7 @@ with Ada.Wide_Wide_Text_IO;
 with Ada.Strings.Bounded;
 with Ada.Text_IO.Bounded_IO;
 with Ada.Containers.Indefinite_Vectors;
+with Ada.Strings.Wide_Wide_Fixed;
 
 procedure advampiric is
    package IO renames Ada.Text_IO;
@@ -15,7 +16,7 @@ procedure advampiric is
 
    package Name_Vectors is new Ada.Containers.Indefinite_Vectors
       (Index_Type => Natural,
-       Element_Type => String);
+       Element_Type => Wide_Wide_String);
 
    type Log_Type is
       record
@@ -28,6 +29,9 @@ procedure advampiric is
    type Log_List is array (1 .. 2) of Log_Type;
 
    function Get_Logs return Log_List;
+   function Is_Important (Msg : in Wide_Wide_String;
+                          Names : in Name_Vectors.Vector)
+      return Boolean;
 
    function Get_Logs return Log_List is
       Logs : constant Log_List := ((
@@ -45,16 +49,29 @@ procedure advampiric is
       return Logs;
    end Get_Logs;
 
+   function Is_Important (Msg : in Wide_Wide_String;
+                          Names : in Name_Vectors.Vector)
+      return Boolean is
+   begin
+      for N of Names loop
+         if Ada.Strings.Wide_Wide_Fixed.Index (Msg, N) /= 0 then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Is_Important;
+
    Logs : constant Log_List := Get_Logs;
 
 begin
-   Ada.Wide_Wide_Text_IO.Put_Line ("test");
+   Ada.Wide_Wide_Text_IO.Put_Line ("testx");
 
    for L of Logs loop
-      BIO.Put_Line (L.Path);
+      BIO.Put_Line (L.Name);
 
-      for N of L.Important loop
-         IO.Put_Line (N);
-      end loop;
+      if Is_Important ("XX:XX <Name1> it works", L.Important) then
+         IO.Put_Line ("it works");
+      end if;
    end loop;
+
 end advampiric;
