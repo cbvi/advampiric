@@ -5,12 +5,10 @@ with Ada.Text_IO.Bounded_IO;
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Strings.Wide_Wide_Fixed;
 with Ada.IO_Exceptions;
-with Ada.Exceptions;
 
 procedure advampiric is
    package IO renames Ada.Text_IO;
    package EIO renames Ada.IO_Exceptions;
-   package EX renames Ada.Exceptions;
 
    package BS
       is new Ada.Strings.Bounded.Generic_Bounded_Length (Max => 128);
@@ -22,22 +20,10 @@ procedure advampiric is
       (Index_Type => Natural,
        Element_Type => Wide_Wide_String);
 
-   type IO_Error is (
-      Status_Error, Mode_Error, Name_Error, Use_Error,
+   type IO_Status is (
+      Ok, Status_Error, Mode_Error, Name_Error, Use_Error,
       Device_Error, End_Error, Data_Error, Layout_Error
    );
-
-   type Result_Status is (Ok, Err);
-
-   type Result (X : Result_Status := Ok) is record
-      case X is
-         when Ok =>
-            null;
-         when Err =>
-            Error : IO_Error;
-            Msg : String (1 .. 200);
-      end case;
-   end record;
 
    type Log_Type is
       record
@@ -49,52 +35,44 @@ procedure advampiric is
 
    type Log_List is array (1 .. 2) of Log_Type;
 
-   function Ex_Msg (E : Ada.Exceptions.Exception_Occurrence) return String;
-
-   function Ex_Msg (E : Ada.Exceptions.Exception_Occurrence) return String is
-      Msg : constant String := EX.Exception_Message (E);
-      Pad : constant String (1 .. 200) :=
-         Msg & (1 .. 200 - Msg'Length => Character'Val (0));
-   begin
-      return Pad;
-   end Ex_Msg;
-
    function Get_Logs return Log_List;
    function Is_Important (Msg : in Wide_Wide_String;
                           Names : in Name_Vectors.Vector)
       return Boolean;
 
-   function Open_File (File_Name : in String) return Result;
+   procedure Open_File (File_Name   : in     String;
+                        File        : in out Ada.Wide_Wide_Text_IO.File_Type;
+                        File_Status :    out IO_Status);
 
-   function Open_File (File_Name : in String) return Result is
-      File : Ada.Wide_Wide_Text_IO.File_Type;
+   procedure Open_File (File_Name   : in     String;
+                        File        : in out Ada.Wide_Wide_Text_IO.File_Type;
+                        File_Status :    out IO_Status)
+   is
    begin
-      begin
-         Ada.Wide_Wide_Text_IO.Open (
-            File => File,
-            Mode => Ada.Wide_Wide_Text_IO.In_File,
-            Name => File_Name,
-            Form => "WCEM=8"
-         );
-      exception
-         when E : EIO.Status_Error =>
-            return (Err, Status_Error, Ex_Msg (E));
-         when E : EIO.Mode_Error =>
-            return (Err, Mode_Error, Ex_Msg (E));
-         when E : EIO.Name_Error =>
-            return (Err, Name_Error, Ex_Msg (E));
-         when E : EIO.Use_Error =>
-            return (Err, Use_Error, Ex_Msg (E));
-         when E : EIO.Device_Error =>
-            return (Err, Device_Error, Ex_Msg (E));
-         when E : EIO.End_Error =>
-            return (Err, End_Error, Ex_Msg (E));
-         when E : EIO.Data_Error =>
-            return (Err, Data_Error, Ex_Msg (E));
-         when E : EIO.Layout_Error =>
-            return (Err, Layout_Error, Ex_Msg (E));
-      end;
-      return (X => Ok);
+      Ada.Wide_Wide_Text_IO.Open (
+         File => File,
+         Mode => Ada.Wide_Wide_Text_IO.In_File,
+         Name => File_Name,
+         Form => "WCEM=8"
+      );
+      File_Status := Ok;
+   exception
+      when EIO.Status_Error =>
+         File_Status := Status_Error;
+      when EIO.Mode_Error =>
+         File_Status := Mode_Error;
+      when EIO.Name_Error =>
+         File_Status := Name_Error;
+      when EIO.Use_Error =>
+         File_Status := Use_Error;
+      when EIO.Device_Error =>
+         File_Status := Device_Error;
+      when EIO.End_Error =>
+         File_Status := End_Error;
+      when EIO.Data_Error =>
+         File_Status := Data_Error;
+      when EIO.Layout_Error =>
+         File_Status := Layout_Error;
    end Open_File;
 
    function Get_Logs return Log_List is
@@ -131,8 +109,8 @@ procedure advampiric is
 
    Logs : constant Log_List := Get_Logs;
 
-   Res : Result;
-
+   File : Ada.Wide_Wide_Text_IO.File_Type;
+   Status : IO_Status;
 begin
    Ada.Wide_Wide_Text_IO.Put_Line ("test");
 
@@ -143,12 +121,12 @@ begin
          IO.Put_Line ("it works");
       end if;
 
-      Res := Open_File (BS.To_String (L.Path));
-      case Res.X is
+      Open_File (BS.To_String (L.Path), File, Status);
+      case Status is
          when Ok =>
             IO.Put_Line ("OK!");
          when others =>
-            IO.Put_Line (Res.Msg);
+            IO.Put_Line (IO_Status'Image (Status));
       end case;
    end loop;
 
