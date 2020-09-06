@@ -124,7 +124,20 @@ begin
       Open_File (BS.To_String (L.Path), File, Status);
       case Status is
          when Ok =>
-            IO.Put_Line ("OK!");
+            loop
+               declare
+                  Line : Wide_Wide_String (1 .. 1024);
+                  Last : Natural;
+               begin
+                  Ada.Wide_Wide_Text_IO.Get_Line (File, Line, Last);
+                  if Is_Important (Line (1 .. Last), L.Important) then
+                     Ada.Wide_Wide_Text_IO.Put_Line (Line (1 .. Last));
+                  end if;
+               exception
+                  when EIO.End_Error => exit;
+               end;
+            end loop;
+            Ada.Wide_Wide_Text_IO.Close (File);
          when others =>
             IO.Put_Line (IO_Status'Image (Status));
       end case;
