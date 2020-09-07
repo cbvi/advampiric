@@ -5,6 +5,9 @@ with Ada.Text_IO.Bounded_IO;
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Strings.Wide_Wide_Fixed;
 with Ada.IO_Exceptions;
+with Ada.Wide_Wide_Text_IO.C_Streams;
+with Ada.Long_Integer_Text_IO;
+with Interfaces.C_Streams;
 
 procedure advampiric is
    package IO renames Ada.Text_IO;
@@ -111,6 +114,8 @@ procedure advampiric is
 
    File : Ada.Wide_Wide_Text_IO.File_Type;
    Status : IO_Status;
+   Stream : Interfaces.C_Streams.FILEs;
+   Off : Long_Integer;
 begin
    Ada.Wide_Wide_Text_IO.Put_Line ("test");
 
@@ -118,12 +123,25 @@ begin
       BIO.Put_Line (L.Name);
 
       if Is_Important ("XX:XX <Name1> it works", L.Important) then
-         IO.Put_Line ("it works");
+         IO.Put_Line ("it works?");
+      end if;
+
+      if L.Id = 1 then
+         Off := 10536777;
+      elsif L.Id = 2 then
+         Off := 2031063;
       end if;
 
       Open_File (BS.To_String (L.Path), File, Status);
       case Status is
          when Ok =>
+            Stream := Ada.Wide_Wide_Text_IO.C_Streams.C_Stream (File);
+            if Interfaces.C_Streams.fseek (Stream,
+                                           Interfaces.C_Streams.long (Off),
+                                           Interfaces.C_Streams.SEEK_CUR) /= 0
+            then
+               null;
+            end if;
             loop
                declare
                   Line : Wide_Wide_String (1 .. 1024);
@@ -134,7 +152,12 @@ begin
                      Ada.Wide_Wide_Text_IO.Put_Line (Line (1 .. Last));
                   end if;
                exception
-                  when EIO.End_Error => exit;
+                  when EIO.End_Error =>
+                     Off := Long_Integer (Interfaces.C_Streams.ftell (Stream));
+                     Ada.Text_IO.Put ("OFFSET ====> ");
+                     Ada.Long_Integer_Text_IO.Put (Off);
+                     Ada.Text_IO.Put_Line ("");
+                     exit;
                end;
             end loop;
             Ada.Wide_Wide_Text_IO.Close (File);
