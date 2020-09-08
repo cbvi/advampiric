@@ -98,10 +98,32 @@ procedure advampiric is
 
    function Is_Important (Msg : in Wide_Wide_String;
                           Names : in Name_Vectors.Vector)
-      return Boolean is
+      return Boolean
+   is
+      Start : Natural;
+      Stop  : Natural;
    begin
+      if Msg'Length <= 10 or Msg (Msg'First + 6 .. Msg'First + 8) = "-!-" then
+         return False;
+      end if;
+
+      Start := Ada.Strings.Wide_Wide_Fixed.Index (Msg, "<");
+      if Start = 0 then
+         return False;
+      end if;
+
+      Stop := Ada.Strings.Wide_Wide_Fixed.Index (Msg, ">", Start);
+      if Stop = 0 then
+         return False;
+      end if;
+
+      if Stop <= Start then
+         return False;
+      end if;
+
       for N of Names loop
-         if Ada.Strings.Wide_Wide_Fixed.Index (Msg, N) /= 0 then
+         if Ada.Strings.Wide_Wide_Fixed.Index (Msg (Start .. Stop), N) /= 0
+         then
             return True;
          end if;
       end loop;
@@ -122,14 +144,12 @@ begin
    for L of Logs loop
       BIO.Put_Line (L.Name);
 
-      if Is_Important ("XX:XX <Name1> it works", L.Important) then
-         IO.Put_Line ("it works?");
-      end if;
-
-      if L.Id = 1 then
+      if False and L.Id = 1 then
          Off := 10536777;
-      elsif L.Id = 2 then
+      elsif False and L.Id = 2 then
          Off := 2031063;
+      else
+         Off := 0;
       end if;
 
       Open_File (BS.To_String (L.Path), File, Status);
@@ -165,5 +185,4 @@ begin
             IO.Put_Line (IO_Status'Image (Status));
       end case;
    end loop;
-
 end advampiric;
