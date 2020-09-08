@@ -107,18 +107,33 @@ procedure advampiric is
          return False;
       end if;
 
-      Start := Ada.Strings.Wide_Wide_Fixed.Index (Msg, "<");
-      if Start = 0 then
-         return False;
-      end if;
+      if Msg (Msg'First + 7) = '*' then
+         Start := Msg'First + 7 + 2;
+         Stop  := Ada.Strings.Wide_Wide_Fixed.Index (Msg, " ", Start);
+         if Stop = 0 then
+            return False;
+         else
+            Stop := Stop - 1;
+         end if;
+      else
+         Start := Ada.Strings.Wide_Wide_Fixed.Index (Msg, "<");
+         if Start = 0 then
+            return False;
+         else
+            Start := Start + 2;
+         end if;
 
-      Stop := Ada.Strings.Wide_Wide_Fixed.Index (Msg, ">", Start);
-      if Stop = 0 then
-         return False;
-      end if;
+         Stop := Ada.Strings.Wide_Wide_Fixed.Index (Msg, ">", Start);
 
-      if Stop <= Start then
-         return False;
+         if Stop = 0 then
+            return False;
+         else
+            Stop := Stop - 1;
+         end if;
+
+         if Stop <= Start then
+            return False;
+         end if;
       end if;
 
       for N of Names loop
