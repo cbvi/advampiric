@@ -1,3 +1,5 @@
+pragma Restrictions (No_Finalization);
+
 with Ada.Text_IO;
 with Ada.Wide_Wide_Text_IO;
 with Ada.Strings.Bounded;
