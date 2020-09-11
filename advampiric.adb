@@ -1,4 +1,6 @@
 pragma Restrictions (No_Finalization);
+pragma Restrictions (No_Abort_Statements);
+pragma Restrictions (Max_Asynchronous_Select_Nesting => 0);
 
 with Ada.Text_IO;
 with Ada.Wide_Wide_Text_IO;
